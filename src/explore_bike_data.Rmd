@@ -6,21 +6,34 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file(),echo = TRUE)
+
 ```
 
 ## Exploring the bike data characteristics
 
 We're exploring the bike data to look at the relationship between **temperature** and **riders.**
 
+### Step 0: Load tidyverse
+
+```{r - load tidyverse, warning=FALSE}
+library(tidyverse)
+```
+
+
 ### Step 1: Load the bike data and look at the metadata
 
-<<<<<<< HEAD
-```{r - load bike data, warning=FALSE}
-library(tidyverse)
 
-=======
 ```{r - load bike data}
-library(tidyverse)
->>>>>>> 95a1027c8bb94d6236325eebcf3d9c0b24df6ae9
+#loading bike data
+bike <- read.csv("data/daily_bike_data.csv")
+head(bike)
+str(bike)
+sort(names(bike))
+
+#Time trend of ridership
+
+ggplot(bike,aes(x= dteday, y = cnt))+
+  geom_col()
+
 ```
