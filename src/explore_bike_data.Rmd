@@ -15,7 +15,12 @@ We're exploring the bike data to look at the relationship between **temperature*
 
 ### Step 1: Load the bike data and look at the metadata
 
+<<<<<<< HEAD
 ```{r - load bike data, warning=FALSE}
 library(tidyverse)
 
+=======
+```{r - load bike data}
+library(tidyverse)
+>>>>>>> 95a1027c8bb94d6236325eebcf3d9c0b24df6ae9
 ```
