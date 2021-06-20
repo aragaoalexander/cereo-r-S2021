@@ -1,0 +1,20 @@
+---
+title: "explore_bike_data"
+author: "Alexander"
+date: "20/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Exploring the bike data characteristics
+
+We're exploring the bike data to look at the relationship between **temperature** and **riders.**
+
+### Step 1: Load the bike data and look at the metadata
+
+```{r - load bike data}
+library(tidyverse)
+```
