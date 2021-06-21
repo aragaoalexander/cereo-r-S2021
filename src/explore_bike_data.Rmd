@@ -31,9 +31,82 @@ head(bike)
 str(bike)
 sort(names(bike))
 
+```
+
+
+```{r - initial graph analysis}
 #Time trend of ridership
 
 ggplot(bike,aes(x= dteday, y = cnt))+
-  geom_col()
+  geom_point()
+
+ggplot(bike,aes(x= temp, y = cnt))+
+  geom_point()
+```
+
+
+```{r - data cleaning}
+# dplyr verbs for data transformations
+#   select: select columns to keep
+#   filter: select rows to keep
+#   mutate: transforms data while keep other columns
+#   transmute: creates new columns and does not keep old columns
+#   %>%: "pipe" pipes de output from one command as input for next command
+
+bike %>% select(dteday, season, weathersit, temp, cnt)
+
+# One way of selecting spring records
+
+spring_bike <- filter(bike, season == "spring")
+
+spring_bike_temp_cnt2 <- bike %>%
+  filter(season == "spring") %>%
+  select(temp, cnt)
+
+#Exercise: select weathersit and cnt for all winter records
+
+winter_bike_weathersit <- bike %>%
+  filter(season == "winter") %>%
+  select(weathersit, cnt)
 
 ```
+
+```{r - Mutate and Transmute with Factors and Dates}
+
+summary(bike$weathersit)
+unique(bike$weathersit)
+
+# Mutating a factor column for weather
+
+bike2 <- bike %>%
+  mutate(
+    weather_fac = factor(weathersit, levels = c(1,2,3,4), labels = c("Clear", "Cloudy", "Rainy", "Heavy Rain"))
+  )
+
+# Converting to and from dates
+
+bike_dates <- bike %>% transmute(
+  instant,
+  date_date = as.Date(dteday),
+  date_char = as.character(dteday),
+  date_num = as.numeric(date_date)
+)
+
+# Additional filtering and selecting
+
+bike %>% select(dteday, cnt)
+
+keep_vars <- c("dteday","cnt","temp")
+bike %>% select(all_of(keep_vars))
+
+bike %>% filter(season != "spring") %>% select(season) %>% distinct()
+
+bike %>% filter(season == "summer" | season == "winter")
+
+
+```
+
+
+
+
+
