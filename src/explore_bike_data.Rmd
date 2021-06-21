@@ -1,8 +1,11 @@
 ---
-title: "explore_bike_data"
+title: "Exploring bike data"
 author: "Alexander"
 date: "20/06/2021"
-output: html_document
+output: 
+  html_document:
+    keep_md: true
+  
 ---
 
 ```{r setup, include=FALSE}
