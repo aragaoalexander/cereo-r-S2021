@@ -904,8 +904,7 @@ unique(bike$weathersit)
 ```r
 # Mutating a factor column for weather
 
-bike2 <- bike %>%
-  mutate(
+bike2 <- bike %>% mutate(
     weather_fac = factor(weathersit, levels = c(1,2,3,4), labels = c("Clear", "Cloudy", "Rainy", "Heavy Rain"))
   )
 
@@ -3142,7 +3141,232 @@ bike %>% filter(season == "summer" | season == "winter")
 ## 362          2 0.330000 0.335217 0.667917 0.1324630    314       3814 4128
 ```
 
+```r
+## More dplyr verbs
+# summarise: summary of multiple rows for a col/variable
+# group_by: perform a operation separately for each group
 
+bike2 %>% summarise(
+  temp_mean = mean(temp),
+  cnt_mean = mean(cnt),
+  cnt_sum = sum(cnt)
+)
+```
+
+```
+##   temp_mean cnt_mean cnt_sum
+## 1 0.4953848 4504.349 3292679
+```
+
+```r
+bike2 %>%
+  group_by(season) %>% 
+  summarise(
+    temp_mean = mean(temp),
+    ride_sum = sum(cnt)
+    )
+```
+
+```
+## # A tibble: 4 x 3
+##   season temp_mean ride_sum
+##   <chr>      <dbl>    <int>
+## 1 fall       0.706  1061129
+## 2 spring     0.298   471348
+## 3 summer     0.544   918589
+## 4 winter     0.423   841613
+```
+
+```r
+# What are the season definitions?
+sort(names(bike))
+```
+
+```
+##  [1] "atemp"      "casual"     "cnt"        "dteday"     "holiday"   
+##  [6] "hum"        "instant"    "mnth"       "registered" "season"    
+## [11] "temp"       "weathersit" "weekday"    "windspeed"  "workingday"
+## [16] "yr"
+```
+
+```r
+bike %>% select(season, mnth) %>% distinct()
+```
+
+```
+##    season      mnth
+## 1  spring   January
+## 2  spring  February
+## 3  spring     March
+## 4  summer     March
+## 5  summer     April
+## 6  summer       May
+## 7  summer      June
+## 8    fall      June
+## 9    fall      July
+## 10   fall    August
+## 11   fall September
+## 12 winter September
+## 13 winter   October
+## 14 winter  November
+## 15 winter  December
+## 16 spring  December
+```
+
+```r
+#Create new season with metereological definitions
+
+bike3 <- bike2 %>%
+  mutate(
+    season2 = 1 * (mnth %in% c("December", "January", "February")) + 2 * (mnth %in% c("March", "April", "May")) + 3 * (mnth %in% c("June", "July", "August")) + 4 * (mnth %in% c("September", "October", "November"))
+  ) %>%
+  mutate(
+    season2 = factor(season2, levels = 0:4, labels = (c("Unknown", "Winter", "Spring", "Summer", "Fall"))
+  ))
+
+bike3 %>%
+  group_by(season2) %>% 
+  summarise(
+    temp_mean = mean(temp),
+    ride_sum = sum(cnt)
+    )
+```
+
+```
+## # A tibble: 4 x 3
+##   season2 temp_mean ride_sum
+##   <fct>       <dbl>    <int>
+## 1 Winter      0.286   497321
+## 2 Spring      0.485   829700
+## 3 Summer      0.716  1042484
+## 4 Fall        0.490   923174
+```
+
+
+```r
+bike3 %>%
+  ggplot() +
+   geom_point(aes(x = temp, y = cnt)) +
+   geom_smooth(aes(x = temp, y = cnt), method = "lm", formula = y ~ poly(x,2))+
+   facet_wrap(~ season2)
+```
+
+![](explore_bike_data_files/figure-html/- Facesetting in ggplot-1.png)<!-- -->
+
+
+```r
+## Pivoting wider to long and longer to wide
+# Long to wide: data in multiple columns
+# Wide to ling: data in one column, classifier in other columns
+# tidyr is the package that allows transformations
+
+months <- c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+
+tidybike <- bike3 %>%
+  select(yr, mnth, temp, cnt) %>%
+  mutate(month = factor(mnth, levels = months)) %>%
+  group_by(yr, month) %>%
+  summarise(temp_mean = mean(temp),
+            rides = sum(cnt))
+```
+
+```
+## `summarise()` has grouped output by 'yr'. You can override using the `.groups` argument.
+```
+
+```r
+## Tidyr functions for long to wide:
+
+# pivot_wider
+
+tidybike %>% 
+  select(-rides) %>%
+  pivot_wider(values_from = temp_mean, names_from = month, names_prefix = "temp_")
+```
+
+```
+## # A tibble: 2 x 13
+## # Groups:   yr [2]
+##      yr temp_January temp_February temp_March temp_April temp_May temp_June
+##   <int>        <dbl>         <dbl>      <dbl>      <dbl>    <dbl>     <dbl>
+## 1  2011        0.198         0.283      0.332      0.471    0.577     0.693
+## 2  2012        0.275         0.315      0.449      0.469    0.612     0.675
+## # ... with 6 more variables: temp_July <dbl>, temp_August <dbl>,
+## #   temp_September <dbl>, temp_October <dbl>, temp_November <dbl>,
+## #   temp_December <dbl>
+```
+
+```r
+#spread
+
+tidybike %>% 
+  select(-rides) %>%
+  spread(value = temp_mean, key = month)
+```
+
+```
+## # A tibble: 2 x 13
+## # Groups:   yr [2]
+##      yr January February March April   May  June  July August September October
+##   <int>   <dbl>    <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>  <dbl>     <dbl>   <dbl>
+## 1  2011   0.198    0.283 0.332 0.471 0.577 0.693 0.759  0.705     0.613   0.470
+## 2  2012   0.275    0.315 0.449 0.469 0.612 0.675 0.752  0.712     0.620   0.500
+## # ... with 2 more variables: November <dbl>, December <dbl>
+```
+
+```r
+## Exercise: do the same, but widening for rides
+
+#pivot_wider
+
+rides <- tidybike %>% 
+  select(-temp_mean) %>%
+  pivot_wider(values_from = rides, names_from = month, names_prefix = "rides_") %>%
+  rename_with(tolower) %>%
+  rename(year = yr)
+
+## Going from wide to long
+# pivot_longer
+# gather
+
+rides %>% gather(key = "month", value = "rides", -year)
+```
+
+```
+## # A tibble: 24 x 3
+## # Groups:   year [2]
+##     year month           rides
+##    <int> <chr>           <int>
+##  1  2011 rides_january   38189
+##  2  2012 rides_january   96744
+##  3  2011 rides_february  48215
+##  4  2012 rides_february 103137
+##  5  2011 rides_march     64045
+##  6  2012 rides_march    164875
+##  7  2011 rides_april     94870
+##  8  2012 rides_april    174224
+##  9  2011 rides_may      135821
+## 10  2012 rides_may      195865
+## # ... with 14 more rows
+```
+
+```r
+rides %>%
+  select(year, rides_january, rides_february) %>%
+  pivot_longer(names_to = "month", cols = c("rides_january", "rides_february"), values_to = "rides") %>%
+  mutate(month = substr(month, 7, nchar(month)))
+```
+
+```
+## # A tibble: 4 x 3
+## # Groups:   year [2]
+##    year month     rides
+##   <int> <chr>     <int>
+## 1  2011 january   38189
+## 2  2011 february  48215
+## 3  2012 january   96744
+## 4  2012 february 103137
+```
 
 
 

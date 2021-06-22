@@ -996,8 +996,7 @@ winter_bike_weathersit &lt;- bike %&gt;%
 <pre><code>## [1] 2 1 3</code></pre>
 <pre class="r"><code># Mutating a factor column for weather
 
-bike2 &lt;- bike %&gt;%
-  mutate(
+bike2 &lt;- bike %&gt;% mutate(
     weather_fac = factor(weathersit, levels = c(1,2,3,4), labels = c(&quot;Clear&quot;, &quot;Cloudy&quot;, &quot;Rainy&quot;, &quot;Heavy Rain&quot;))
   )
 
@@ -3211,6 +3210,167 @@ bike %&gt;% select(all_of(keep_vars))</code></pre>
 ## 360          1 0.410833 0.409708 0.666250 0.2214040    433       5124 5557
 ## 361          1 0.332500 0.342162 0.625417 0.1840920    333       4934 5267
 ## 362          2 0.330000 0.335217 0.667917 0.1324630    314       3814 4128</code></pre>
+<pre class="r"><code>## More dplyr verbs
+# summarise: summary of multiple rows for a col/variable
+# group_by: perform a operation separately for each group
+
+bike2 %&gt;% summarise(
+  temp_mean = mean(temp),
+  cnt_mean = mean(cnt),
+  cnt_sum = sum(cnt)
+)</code></pre>
+<pre><code>##   temp_mean cnt_mean cnt_sum
+## 1 0.4953848 4504.349 3292679</code></pre>
+<pre class="r"><code>bike2 %&gt;%
+  group_by(season) %&gt;% 
+  summarise(
+    temp_mean = mean(temp),
+    ride_sum = sum(cnt)
+    )</code></pre>
+<pre><code>## # A tibble: 4 x 3
+##   season temp_mean ride_sum
+##   &lt;chr&gt;      &lt;dbl&gt;    &lt;int&gt;
+## 1 fall       0.706  1061129
+## 2 spring     0.298   471348
+## 3 summer     0.544   918589
+## 4 winter     0.423   841613</code></pre>
+<pre class="r"><code># What are the season definitions?
+sort(names(bike))</code></pre>
+<pre><code>##  [1] &quot;atemp&quot;      &quot;casual&quot;     &quot;cnt&quot;        &quot;dteday&quot;     &quot;holiday&quot;   
+##  [6] &quot;hum&quot;        &quot;instant&quot;    &quot;mnth&quot;       &quot;registered&quot; &quot;season&quot;    
+## [11] &quot;temp&quot;       &quot;weathersit&quot; &quot;weekday&quot;    &quot;windspeed&quot;  &quot;workingday&quot;
+## [16] &quot;yr&quot;</code></pre>
+<pre class="r"><code>bike %&gt;% select(season, mnth) %&gt;% distinct()</code></pre>
+<pre><code>##    season      mnth
+## 1  spring   January
+## 2  spring  February
+## 3  spring     March
+## 4  summer     March
+## 5  summer     April
+## 6  summer       May
+## 7  summer      June
+## 8    fall      June
+## 9    fall      July
+## 10   fall    August
+## 11   fall September
+## 12 winter September
+## 13 winter   October
+## 14 winter  November
+## 15 winter  December
+## 16 spring  December</code></pre>
+<pre class="r"><code>#Create new season with metereological definitions
+
+bike3 &lt;- bike2 %&gt;%
+  mutate(
+    season2 = 1 * (mnth %in% c(&quot;December&quot;, &quot;January&quot;, &quot;February&quot;)) + 2 * (mnth %in% c(&quot;March&quot;, &quot;April&quot;, &quot;May&quot;)) + 3 * (mnth %in% c(&quot;June&quot;, &quot;July&quot;, &quot;August&quot;)) + 4 * (mnth %in% c(&quot;September&quot;, &quot;October&quot;, &quot;November&quot;))
+  ) %&gt;%
+  mutate(
+    season2 = factor(season2, levels = 0:4, labels = (c(&quot;Unknown&quot;, &quot;Winter&quot;, &quot;Spring&quot;, &quot;Summer&quot;, &quot;Fall&quot;))
+  ))
+
+bike3 %&gt;%
+  group_by(season2) %&gt;% 
+  summarise(
+    temp_mean = mean(temp),
+    ride_sum = sum(cnt)
+    )</code></pre>
+<pre><code>## # A tibble: 4 x 3
+##   season2 temp_mean ride_sum
+##   &lt;fct&gt;       &lt;dbl&gt;    &lt;int&gt;
+## 1 Winter      0.286   497321
+## 2 Spring      0.485   829700
+## 3 Summer      0.716  1042484
+## 4 Fall        0.490   923174</code></pre>
+<pre class="r"><code>bike3 %&gt;%
+  ggplot() +
+   geom_point(aes(x = temp, y = cnt)) +
+   geom_smooth(aes(x = temp, y = cnt), method = &quot;lm&quot;, formula = y ~ poly(x,2))+
+   facet_wrap(~ season2)</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>## Pivoting wider to long and longer to wide
+# Long to wide: data in multiple columns
+# Wide to ling: data in one column, classifier in other columns
+# tidyr is the package that allows transformations
+
+months &lt;- c(&quot;January&quot;, &quot;February&quot;, &quot;March&quot;, &quot;April&quot;, &quot;May&quot;, &quot;June&quot;, &quot;July&quot;, &quot;August&quot;, &quot;September&quot;, &quot;October&quot;, &quot;November&quot;, &quot;December&quot;)
+
+tidybike &lt;- bike3 %&gt;%
+  select(yr, mnth, temp, cnt) %&gt;%
+  mutate(month = factor(mnth, levels = months)) %&gt;%
+  group_by(yr, month) %&gt;%
+  summarise(temp_mean = mean(temp),
+            rides = sum(cnt))</code></pre>
+<pre><code>## `summarise()` has grouped output by &#39;yr&#39;. You can override using the `.groups` argument.</code></pre>
+<pre class="r"><code>## Tidyr functions for long to wide:
+
+# pivot_wider
+
+tidybike %&gt;% 
+  select(-rides) %&gt;%
+  pivot_wider(values_from = temp_mean, names_from = month, names_prefix = &quot;temp_&quot;)</code></pre>
+<pre><code>## # A tibble: 2 x 13
+## # Groups:   yr [2]
+##      yr temp_January temp_February temp_March temp_April temp_May temp_June
+##   &lt;int&gt;        &lt;dbl&gt;         &lt;dbl&gt;      &lt;dbl&gt;      &lt;dbl&gt;    &lt;dbl&gt;     &lt;dbl&gt;
+## 1  2011        0.198         0.283      0.332      0.471    0.577     0.693
+## 2  2012        0.275         0.315      0.449      0.469    0.612     0.675
+## # ... with 6 more variables: temp_July &lt;dbl&gt;, temp_August &lt;dbl&gt;,
+## #   temp_September &lt;dbl&gt;, temp_October &lt;dbl&gt;, temp_November &lt;dbl&gt;,
+## #   temp_December &lt;dbl&gt;</code></pre>
+<pre class="r"><code>#spread
+
+tidybike %&gt;% 
+  select(-rides) %&gt;%
+  spread(value = temp_mean, key = month)</code></pre>
+<pre><code>## # A tibble: 2 x 13
+## # Groups:   yr [2]
+##      yr January February March April   May  June  July August September October
+##   &lt;int&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;   &lt;dbl&gt;
+## 1  2011   0.198    0.283 0.332 0.471 0.577 0.693 0.759  0.705     0.613   0.470
+## 2  2012   0.275    0.315 0.449 0.469 0.612 0.675 0.752  0.712     0.620   0.500
+## # ... with 2 more variables: November &lt;dbl&gt;, December &lt;dbl&gt;</code></pre>
+<pre class="r"><code>## Exercise: do the same, but widening for rides
+
+#pivot_wider
+
+rides &lt;- tidybike %&gt;% 
+  select(-temp_mean) %&gt;%
+  pivot_wider(values_from = rides, names_from = month, names_prefix = &quot;rides_&quot;) %&gt;%
+  rename_with(tolower) %&gt;%
+  rename(year = yr)
+
+## Going from wide to long
+# pivot_longer
+# gather
+
+rides %&gt;% gather(key = &quot;month&quot;, value = &quot;rides&quot;, -year)</code></pre>
+<pre><code>## # A tibble: 24 x 3
+## # Groups:   year [2]
+##     year month           rides
+##    &lt;int&gt; &lt;chr&gt;           &lt;int&gt;
+##  1  2011 rides_january   38189
+##  2  2012 rides_january   96744
+##  3  2011 rides_february  48215
+##  4  2012 rides_february 103137
+##  5  2011 rides_march     64045
+##  6  2012 rides_march    164875
+##  7  2011 rides_april     94870
+##  8  2012 rides_april    174224
+##  9  2011 rides_may      135821
+## 10  2012 rides_may      195865
+## # ... with 14 more rows</code></pre>
+<pre class="r"><code>rides %&gt;%
+  select(year, rides_january, rides_february) %&gt;%
+  pivot_longer(names_to = &quot;month&quot;, cols = c(&quot;rides_january&quot;, &quot;rides_february&quot;), values_to = &quot;rides&quot;) %&gt;%
+  mutate(month = substr(month, 7, nchar(month)))</code></pre>
+<pre><code>## # A tibble: 4 x 3
+## # Groups:   year [2]
+##    year month     rides
+##   &lt;int&gt; &lt;chr&gt;     &lt;int&gt;
+## 1  2011 january   38189
+## 2  2011 february  48215
+## 3  2012 january   96744
+## 4  2012 february 103137</code></pre>
 </div>
 </div>
 
